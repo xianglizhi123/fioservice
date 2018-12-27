@@ -1,5 +1,7 @@
 FROM golang
 MAINTAINER LIZHIXIANG
+RUN apt-get update
+RUN apt-get install fio
 WORKDIR $GOPATH
 RUN go get "github.com/gorilla/mux"
 WORKDIR $GOPATH/src/fioProject
@@ -13,7 +15,5 @@ COPY fioagent.go .
 RUN mv fioagent.go main.go
 RUN go build
 WORKDIR $GOPATH/src/fioProject
-EXPOSE 8000
-RUN echo $pwd
 CMD ./fioProject
 
