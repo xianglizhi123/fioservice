@@ -1,7 +1,7 @@
 FROM golang
 MAINTAINER LIZHIXIANG
 RUN apt-get update
-RUN apt-get install fio
+RUN apt-get install fio --assume-yes
 WORKDIR $GOPATH
 RUN go get "github.com/gorilla/mux"
 WORKDIR $GOPATH/src/fioProject
