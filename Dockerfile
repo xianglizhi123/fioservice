@@ -1,4 +1,4 @@
-FROM golang
+FROM ubuntu
 MAINTAINER LIZHIXIANG
 WORKDIR /var/cache/apt/archives
 RUN apt-get update
@@ -11,18 +11,18 @@ RUN apt-get install librdmacm1 --assume-yes
 COPY fio_2.2.10-1ubuntu1_amd64.deb .
 RUN dpkg -i fio_2.2.10-1ubuntu1_amd64.deb
 RUN apt-get update
-WORKDIR $GOPATH
-RUN go get "github.com/gorilla/mux"
-WORKDIR $GOPATH/src/fioProject
+WORKDIR /
+RUN mkdir -p go/src/fioProject
+WORKDIR /go/src/fioProject
 RUN mkdir fioTool
 RUN mkdir report
-COPY fioserver.go .
-RUN mv fioserver.go main.go
-RUN go build
-WORKDIR $GOPATH/src/fioProject/fioTool
-COPY fioagent.go .
-RUN mv fioagent.go main.go
-RUN go build
-WORKDIR $GOPATH/src/fioProject
+COPY fioProject.go .
+RUN mv fioProject.go main.go
+COPY fioProject .
+WORKDIR /go/src/fioProject/fioTool
+COPY fioTool.go .
+RUN mv fioTool.go main.go
+COPY fioTool .
+WORKDIR /go/src/fioProject
 CMD ./fioProject
 
