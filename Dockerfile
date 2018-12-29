@@ -2,6 +2,7 @@ FROM ubuntu
 MAINTAINER LIZHIXIANG
 WORKDIR /var/cache/apt/archives
 RUN apt-get update
+RUN apt-get install python --assume-yes
 RUN apt-get install apt-utils --assume-yes
 RUN apt-get install libaio1 --assume-yes
 RUN apt-get install libibverbs1 --assume-yes
