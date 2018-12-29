@@ -6,7 +6,7 @@ import(
     "github.com/gorilla/mux"
     "os/exec"
     "io/ioutil"
-    //"fmt"
+    "fmt"
 	"os"
     "strconv"	
 )
@@ -72,6 +72,7 @@ func SetParameters(fio FioParameters) []string{
 	return resp
 }
 func HandleGetReport(w http.ResponseWriter,r *http.Request){
+	fmt.Println("inside get report")
 	var reportName ReportName
 	var reportResponse ReportResponse
 	_=json.NewDecoder(r.Body).Decode(&reportName)
@@ -99,6 +100,7 @@ func HandleGetReport(w http.ResponseWriter,r *http.Request){
 	}
 }
 func HandleCheckTask(w http.ResponseWriter, r * http.Request){
+	fmt.Println("inside check task")
 	var fioAgentPid FioAgentPid
 	_=json.NewDecoder(r.Body).Decode(&fioAgentPid)
 	var cmds []string
@@ -113,11 +115,15 @@ func HandleCheckTask(w http.ResponseWriter, r * http.Request){
 	}
 	json.NewEncoder(w).Encode(checkStatusReturn)
 }
+func TestServer(w http.ResponseWriter, r * http.Request){
+   	json.NewEncoder(w).Encode("hello hello")
+}
 func HandleFioRequest(w http.ResponseWriter, r * http.Request){
+	fmt.Println("inside fio request")
 	var fioParameters FioParameters
 	_=json.NewDecoder(r.Body).Decode(&fioParameters)
 	cmds:=SetParameters(fioParameters)
-	cmd:=exec.Command("./fioAgent/fioTool",cmds...)
+	cmd:=exec.Command("./fioTool/fioTool",cmds...)
 	//json.NewEncoder(w).Encode("hello")
 	cmd.Stdout=os.Stdout
 	cmd.Start()
@@ -129,6 +135,7 @@ func HandleFioRequest(w http.ResponseWriter, r * http.Request){
 	go func(){
 		ch<-cmd.Wait()
 	}()
+	//cmd.Wait()
 	json.NewEncoder(w).Encode(res)
 }
 func main() {
@@ -136,5 +143,6 @@ func main() {
 	router.HandleFunc("/ExecuteFio",HandleFioRequest).Methods("POST")
 	router.HandleFunc("/CheckStatus",HandleCheckTask).Methods("POST")
 	router.HandleFunc("/GetReport",HandleGetReport).Methods("POST")
+	router.HandleFunc("/TestServer",TestServer).Methods("POST")
     log.Fatal(http.ListenAndServe(":8000", router))
 }

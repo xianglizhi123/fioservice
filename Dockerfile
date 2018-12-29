@@ -1,7 +1,16 @@
 FROM golang
 MAINTAINER LIZHIXIANG
+WORKDIR /var/cache/apt/archives
 RUN apt-get update
-RUN apt-get install fio --assume-yes
+RUN apt-get install apt-utils --assume-yes
+RUN apt-get install libaio1 --assume-yes
+RUN apt-get install libibverbs1 --assume-yes
+RUN apt-get install librados2 --assume-yes
+RUN apt-get install librbd1 --assume-yes
+RUN apt-get install librdmacm1 --assume-yes
+COPY fio_2.2.10-1ubuntu1_amd64.deb .
+RUN dpkg -i fio_2.2.10-1ubuntu1_amd64.deb
+RUN apt-get update
 WORKDIR $GOPATH
 RUN go get "github.com/gorilla/mux"
 WORKDIR $GOPATH/src/fioProject

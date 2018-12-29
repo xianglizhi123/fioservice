@@ -5,7 +5,7 @@ import(
 	"bufio"
 	"strings"
 	"io"
-	//"fmt"
+	"fmt"
 	"strconv"
 	"encoding/json"
 )
@@ -218,47 +218,74 @@ func RetriveFirstLine(str string,resp *Value){
        resp.Write_runt=runt
    }
 }
+func RemoveBlockSpaceAndEmptyLine(block *Block){
+     var str string
+     str=""
+     for i:=0;i!=len(block.Lines);i++{
+        for j:=0;j!=len(block.Lines[i]);j++{
+	   if block.Lines[i][j:j+1]!=""{
+	      str=str+block.Lines[i][j:j+1]
+	    }
+	}
+	block.Lines[i]=str
+	str=""
+     }
+     var res []string
+     for i:=0;i!=len(block.Lines);i++{
+        if block.Lines[i]!="\n"{
+	res=append(res,block.Lines[i])
+	}
+     }
+     block.Lines=res    
+}
 func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
-    //b,_:=json.Marshal(block)
     if fioMode=="randread"{
+        numLines:=len(block.Lines)
         readLine:=strings.Split(block.Lines[1],":")[1]
         readLine=readLine[0:len(readLine)-1]
+	readDetails:=strings.Split(readLine,",")
+	runStatus.Read_io=strings.Split(readDetails[0],"=")[1]
+        runStatus.Read_aggrb=strings.Split(readDetails[1],"=")[1]
+	runStatus.Read_minb=strings.Split(readDetails[2],"=")[1]
+	runStatus.Read_maxb=strings.Split(readDetails[3],"=")[1]
+	runStatus.Read_mint=strings.Split(readDetails[4],"=")[1]
+	runStatus.Read_maxt=strings.Split(readDetails[5],"=")[1]
+	if numLines>2{
         diskLine:=strings.Split(block.Lines[3],":")[1]
         diskLine=diskLine[0:len(diskLine)-1]
+	fmt.Printf("diskLine is %s\n",diskLine)
         diskDetails:=strings.Split(diskLine,",")
-        readDetails:=strings.Split(readLine,",")
-        runStatus.Read_io=strings.Split(readDetails[0],"=")[1]
-        runStatus.Read_aggrb=strings.Split(readDetails[1],"=")[1]
-        runStatus.Read_minb=strings.Split(readDetails[2],"=")[1]
-        runStatus.Read_maxb=strings.Split(readDetails[3],"=")[1]
-        runStatus.Read_mint=strings.Split(readDetails[4],"=")[1]
-        runStatus.Read_maxt=strings.Split(readDetails[5],"=")[1]
         runStatus.Disk_stats_ios=strings.Split(diskDetails[0],"=")[1]
         runStatus.Disk_stats_merge=strings.Split(diskDetails[1],"=")[1]
         runStatus.Disk_stats_ticks=strings.Split(diskDetails[2],"=")[1]
         runStatus.Disk_stats_in_queue=strings.Split(diskDetails[3],"=")[1]
         runStatus.Disk_stats_util=strings.Split(diskDetails[4],"=")[1]
+	}
     }else if fioMode=="randwrite"{
-		writeLine:=strings.Split(block.Lines[1],":")[1]
-		writeLine=writeLine[0:len(writeLine)-1]
+        numLines:=len(block.Lines)
+	writeLine:=strings.Split(block.Lines[1],":")[1]
+	writeLine=writeLine[0:len(writeLine)-1]
         writeDetails:=strings.Split(writeLine,",")
-		diskLine:=strings.Split(block.Lines[3],":")[1]
-		diskLine=diskLine[0:len(diskLine)-1]
-        diskDetails:=strings.Split(diskLine,",")
-        runStatus.Write_io=strings.Split(writeDetails[0],"=")[1]
-        runStatus.Write_aggrb=strings.Split(writeDetails[1],"=")[1]
+	runStatus.Write_io=strings.Split(writeDetails[0],"=")[1]
+	runStatus.Write_aggrb=strings.Split(writeDetails[1],"=")[1]
         runStatus.Write_minb=strings.Split(writeDetails[2],"=")[1]
-        runStatus.Write_maxb=strings.Split(writeDetails[3],"=")[1]
-        runStatus.Write_mint=strings.Split(writeDetails[4],"=")[1]
-        runStatus.Write_maxt=strings.Split(writeDetails[5],"=")[1]
+	runStatus.Write_maxb=strings.Split(writeDetails[3],"=")[1]
+	runStatus.Write_mint=strings.Split(writeDetails[4],"=")[1]
+	runStatus.Write_maxt=strings.Split(writeDetails[5],"=")[1]
+	if numLines>2{					
+	diskLine:=strings.Split(block.Lines[2],":")[1]
+	diskLine=diskLine[0:len(diskLine)-1]
+        diskDetails:=strings.Split(diskLine,",")
         runStatus.Disk_stats_ios=strings.Split(diskDetails[0],"=")[1]
         runStatus.Disk_stats_merge=strings.Split(diskDetails[1],"=")[1]
         runStatus.Disk_stats_ticks=strings.Split(diskDetails[2],"=")[1]
         runStatus.Disk_stats_in_queue=strings.Split(diskDetails[3],"=")[1]
         runStatus.Disk_stats_util=strings.Split(diskDetails[4],"=")[1]
+	}
     }else if fioMode=="randrw"{
-		readLine:=strings.Split(block.Lines[1],":")[1]
-		readLine=readLine[0:len(readLine)-1]
+        numLines:=len(block.Lines)
+	readLine:=strings.Split(block.Lines[1],":")[1]
+	readLine=readLine[0:len(readLine)-1]
         readDetails:=strings.Split(readLine,",")
         runStatus.Read_io=strings.Split(readDetails[0],"=")[1]
         runStatus.Read_aggrb=strings.Split(readDetails[1],"=")[1]
@@ -266,8 +293,8 @@ func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
         runStatus.Read_maxb=strings.Split(readDetails[3],"=")[1]
         runStatus.Read_mint=strings.Split(readDetails[4],"=")[1]
         runStatus.Read_maxt=strings.Split(readDetails[5],"=")[1]
-		writeLine:=strings.Split(block.Lines[2],":")[1]
-		writeLine=writeLine[0:len(writeLine)-1]
+	writeLine:=strings.Split(block.Lines[2],":")[1]
+	writeLine=writeLine[0:len(writeLine)-1]
         writeDetails:=strings.Split(writeLine,",")
         runStatus.Write_io=strings.Split(writeDetails[0],"=")[1]
         runStatus.Write_aggrb=strings.Split(writeDetails[1],"=")[1]
@@ -275,14 +302,16 @@ func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
         runStatus.Write_maxb=strings.Split(writeDetails[3],"=")[1]
         runStatus.Write_mint=strings.Split(writeDetails[4],"=")[1]
         runStatus.Write_maxt=strings.Split(writeDetails[5],"=")[1]
-		diskLine:=strings.Split(block.Lines[4],":")[1]
-		diskLine=diskLine[0:len(diskLine)-1]
+	if numLines>4{
+	diskLine:=strings.Split(block.Lines[4],":")[1]
+	diskLine=diskLine[0:len(diskLine)-1]
         diskDetails:=strings.Split(diskLine,",")
         runStatus.Disk_stats_ios=strings.Split(diskDetails[0],"=")[1]
         runStatus.Disk_stats_merge=strings.Split(diskDetails[1],"=")[1]
         runStatus.Disk_stats_ticks=strings.Split(diskDetails[2],"=")[1]
         runStatus.Disk_stats_in_queue=strings.Split(diskDetails[3],"=")[1]
         runStatus.Disk_stats_util=strings.Split(diskDetails[4],"=")[1]
+	}
     }
 }
 func BuildResult(blocks []Block,fioMode string) Result{
@@ -290,46 +319,47 @@ func BuildResult(blocks []Block,fioMode string) Result{
     if fioMode=="randread"{
        for i:=0;i!=len(blocks)-1;i++{
 		 RetriveFirstLine(blocks[i].Lines[1],&BlockValue[i])
-		 //fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Read_io,BlockValue[i].Read_bw,BlockValue[i].Read_iops,BlockValue[i].Read_runt)
+		 fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Read_io,BlockValue[i].Read_bw,BlockValue[i].Read_iops,BlockValue[i].Read_runt)
 		 RetriveReadBw(blocks[i].Lines[10],&BlockValue[i])
-		 //fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Read_bw_details_min,BlockValue[i].Read_bw_details_max,BlockValue[i].Read_bw_details_avg,BlockValue[i].Read_bw_details_per,BlockValue[i].Read_bw_details_stdev)
+		 fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Read_bw_details_min,BlockValue[i].Read_bw_details_max,BlockValue[i].Read_bw_details_avg,BlockValue[i].Read_bw_details_per,BlockValue[i].Read_bw_details_stdev)
 		 RetriveReadClat(blocks[i].Lines[2],&BlockValue[i])
-		 //fmt.Printf("Read_clat_min=%s,Read_clat_max=%s,Read_clat_avg=%s,Read_clat_stdev=%s\n",BlockValue[i].Read_clat_min,BlockValue[i].Read_clat_max,BlockValue[i].Read_clat_avg,BlockValue[i].Read_clat_stdev)
+		 fmt.Printf("Read_clat_min=%s,Read_clat_max=%s,Read_clat_avg=%s,Read_clat_stdev=%s\n",BlockValue[i].Read_clat_min,BlockValue[i].Read_clat_max,BlockValue[i].Read_clat_avg,BlockValue[i].Read_clat_stdev)
 		 RetriveReadLat(blocks[i].Lines[3],&BlockValue[i])
-		 //fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Read_lat_min,BlockValue[i].Read_lat_max,BlockValue[i].Read_lat_avg,BlockValue[i].Read_lat_stdev)
+		 fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Read_lat_min,BlockValue[i].Read_lat_max,BlockValue[i].Read_lat_avg,BlockValue[i].Read_lat_stdev)
        }
     }else if fioMode=="randwrite"{
         for i:=0;i!=len(blocks)-1;i++{
 			RetriveFirstLine(blocks[i].Lines[1],&BlockValue[i])
-			//fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Write_io,BlockValue[i].Write_bw,BlockValue[i].Write_iops,BlockValue[i].Write_runt)
+			fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Write_io,BlockValue[i].Write_bw,BlockValue[i].Write_iops,BlockValue[i].Write_runt)
 			RetriveWriteBw(blocks[i].Lines[10],&BlockValue[i])
-			//fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Write_bw_details_min,BlockValue[i].Write_bw_details_max,BlockValue[i].Write_bw_details_avg,BlockValue[i].Write_bw_details_per,BlockValue[i].Write_bw_details_stdev)
+			fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Write_bw_details_min,BlockValue[i].Write_bw_details_max,BlockValue[i].Write_bw_details_avg,BlockValue[i].Write_bw_details_per,BlockValue[i].Write_bw_details_stdev)
 			RetriveWriteClat(blocks[i].Lines[2],&BlockValue[i])
-			//fmt.Printf("Read_clat_min=%s,Read_clat_max=%s,Read_clat_avg=%s,Read_clat_stdev=%s\n",BlockValue[i].Write_clat_min,BlockValue[i].Write_clat_max,BlockValue[i].Write_clat_avg,BlockValue[i].Write_clat_stdev)
+			fmt.Printf("Read_clat_min=%s,Read_clat_max=%s,Read_clat_avg=%s,Read_clat_stdev=%s\n",BlockValue[i].Write_clat_min,BlockValue[i].Write_clat_max,BlockValue[i].Write_clat_avg,BlockValue[i].Write_clat_stdev)
 			RetriveWriteLat(blocks[i].Lines[3],&BlockValue[i])
-			//fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Write_lat_min,BlockValue[i].Write_lat_max,BlockValue[i].Write_lat_avg,BlockValue[i].Write_lat_stdev)
+			fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Write_lat_min,BlockValue[i].Write_lat_max,BlockValue[i].Write_lat_avg,BlockValue[i].Write_lat_stdev)
         }
     }else if fioMode=="randrw"{
         for i:=0;i!=len(blocks)-1;i++{
 			RetriveFirstLine(blocks[i].Lines[1],&BlockValue[i])
-			//fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Read_io,BlockValue[i].Read_bw,BlockValue[i].Read_iops,BlockValue[i].Read_runt)
+			fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Read_io,BlockValue[i].Read_bw,BlockValue[i].Read_iops,BlockValue[i].Read_runt)
 			RetriveReadClat(blocks[i].Lines[2],&BlockValue[i])
-			//fmt.Printf("Read_clat_min=%s,Read_clat_max=%s,Read_clat_avg=%s,Read_clat_stdev=%s\n",BlockValue[i].Read_clat_min,BlockValue[i].Read_clat_max,BlockValue[i].Read_clat_avg,BlockValue[i].Read_clat_stdev)
+			fmt.Printf("Read_clat_min=%s,Read_clat_max=%s,Read_clat_avg=%s,Read_clat_stdev=%s\n",BlockValue[i].Read_clat_min,BlockValue[i].Read_clat_max,BlockValue[i].Read_clat_avg,BlockValue[i].Read_clat_stdev)
 			RetriveReadLat(blocks[i].Lines[3],&BlockValue[i])
-			//fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Read_lat_min,BlockValue[i].Read_lat_max,BlockValue[i].Read_lat_avg,BlockValue[i].Read_lat_stdev)
+			fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Read_lat_min,BlockValue[i].Read_lat_max,BlockValue[i].Read_lat_avg,BlockValue[i].Read_lat_stdev)
 			RetriveReadBw(blocks[i].Lines[10],&BlockValue[i])
-			//fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Read_bw_details_min,BlockValue[i].Read_bw_details_max,BlockValue[i].Read_bw_details_avg,BlockValue[i].Read_bw_details_per,BlockValue[i].Read_bw_details_stdev)
+			fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Read_bw_details_min,BlockValue[i].Read_bw_details_max,BlockValue[i].Read_bw_details_avg,BlockValue[i].Read_bw_details_per,BlockValue[i].Read_bw_details_stdev)
 			RetriveFirstLine(blocks[i].Lines[11],&BlockValue[i])
-			//fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Write_io,BlockValue[i].Write_bw,BlockValue[i].Write_iops,BlockValue[i].Write_runt)
+			fmt.Printf("read_io=%s,read_bw=%s,read_iops=%s,read_runt=%s\n",BlockValue[i].Write_io,BlockValue[i].Write_bw,BlockValue[i].Write_iops,BlockValue[i].Write_runt)
 			RetriveWriteClat(blocks[i].Lines[12],&BlockValue[i])
-			//fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Write_bw_details_min,BlockValue[i].Write_bw_details_max,BlockValue[i].Write_bw_details_avg,BlockValue[i].Write_bw_details_per,BlockValue[i].Write_bw_details_stdev)
+			fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Write_bw_details_min,BlockValue[i].Write_bw_details_max,BlockValue[i].Write_bw_details_avg,BlockValue[i].Write_bw_details_per,BlockValue[i].Write_bw_details_stdev)
 			RetriveWriteLat(blocks[i].Lines[13],&BlockValue[i])
-			//fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Write_lat_min,BlockValue[i].Write_lat_max,BlockValue[i].Write_lat_avg,BlockValue[i].Write_lat_stdev)
+			fmt.Printf("Read_lat_min=%s,Read_lat_max=%s,Read_lat_avg=%s,Read_lat_stdev=%s\n",BlockValue[i].Write_lat_min,BlockValue[i].Write_lat_max,BlockValue[i].Write_lat_avg,BlockValue[i].Write_lat_stdev)
 			RetriveWriteBw(blocks[i].Lines[20],&BlockValue[i])
-			//fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Write_bw_details_min,BlockValue[i].Write_bw_details_max,BlockValue[i].Write_bw_details_avg,BlockValue[i].Write_bw_details_per,BlockValue[i].Write_bw_details_stdev)
+			fmt.Printf("read_bw_details_min=%s,read_bw_details_max=%s,read_bw_details_per=%s,read_bw_details_avg=%s,read_bw_details_stdev=%s\n",BlockValue[i].Write_bw_details_min,BlockValue[i].Write_bw_details_max,BlockValue[i].Write_bw_details_avg,BlockValue[i].Write_bw_details_per,BlockValue[i].Write_bw_details_stdev)
           }
     }
     var runStatus RunStatus
+    RemoveBlockSpaceAndEmptyLine(&blocks[len(blocks)-1])
     GetRunStatus(blocks[len(blocks)-1],&runStatus,fioMode)
     var result Result
     result.Results=BlockValue
@@ -415,6 +445,7 @@ func main(){
  //fmt.Printf("start fioAgent process\n")
  var cmds []string
  cmds=os.Args[1:len(os.Args)]
+ fmt.Println(cmds)
  cmd:=exec.Command("fio",cmds...)
  stdout,_ :=cmd.StdoutPipe()
  cmd.Start()
@@ -428,23 +459,31 @@ func main(){
       //resp=resp+line
       resp=append(resp,line)
   }
-  var numJobsIndex int
-  var projectNameIndex int
+  fmt.Println("fio result")
+  fmt.Println(resp)
+  fmt.Println("fio ends")
   var fioMode string
   var numJobs string
-  fioMode=cmds[4][4:len(cmds[4])]
-  if fioMode=="randrw"{
-	  numJobsIndex=8
-	  projectNameIndex=10
-  }else{
-	  numJobsIndex=7
-	  projectNameIndex=9
+  var projectName string
+  for i:=0;i!=len(cmds);i++{
+     if cmds[i][0:4]=="-rw="{
+     fioMode=cmds[i][4:len(cmds[i])]
+     }
+     if len(cmds[i])>8&&cmds[i][0:8]=="-numjobs"{
+     numJobs=cmds[i][9:len(cmds[i])]
+     }
+     if len(cmds[i])>6&&cmds[i][0:5]=="-name"{
+     projectName=cmds[i][6:len(cmds[i])]
+     }
   }
-  projectName:=cmds[projectNameIndex][6:len(cmds[projectNameIndex])]
-  numJobs=cmds[numJobsIndex][9:len(cmds[numJobsIndex])]
+  fmt.Printf("fioMode=%s,numJobs=%s,projectName=%s\n",fioMode,numJobs,projectName)
   blocks:=GetUsefulBlocks(resp,projectName,fioMode,numJobs)
+  fmt.Println(blocks)
   res:=BuildResult(blocks,fioMode)
   b,_:=json.Marshal(res)
+  fmt.Println("report")
+  fmt.Println(b)
+  fmt.Println("report end")
   var reportName string
   reportName="/go/src/fioProject/report/"+strconv.Itoa(os.Getpid())+"-"+projectName
   f,_:=os.Create(reportName)
