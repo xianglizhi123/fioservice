@@ -240,6 +240,7 @@ func RemoveBlockSpaceAndEmptyLine(block *Block){
 }
 func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
     if fioMode=="randread"{
+        fmt.Println(block.Lines)
         numLines:=len(block.Lines)
         readLine:=strings.Split(block.Lines[1],":")[1]
         readLine=readLine[0:len(readLine)-1]
@@ -262,6 +263,7 @@ func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
         runStatus.Disk_stats_util=strings.Split(diskDetails[4],"=")[1]
 	}
     }else if fioMode=="randwrite"{
+        fmt.Println(block.Lines)
         numLines:=len(block.Lines)
 	writeLine:=strings.Split(block.Lines[1],":")[1]
 	writeLine=writeLine[0:len(writeLine)-1]
@@ -273,8 +275,9 @@ func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
 	runStatus.Write_mint=strings.Split(writeDetails[4],"=")[1]
 	runStatus.Write_maxt=strings.Split(writeDetails[5],"=")[1]
 	if numLines>2{					
-	diskLine:=strings.Split(block.Lines[2],":")[1]
+	diskLine:=strings.Split(block.Lines[3],":")[1]
 	diskLine=diskLine[0:len(diskLine)-1]
+	fmt.Printf("diskLine is %s\n",diskLine)
         diskDetails:=strings.Split(diskLine,",")
         runStatus.Disk_stats_ios=strings.Split(diskDetails[0],"=")[1]
         runStatus.Disk_stats_merge=strings.Split(diskDetails[1],"=")[1]
@@ -305,6 +308,7 @@ func GetRunStatus(block Block,runStatus *RunStatus, fioMode string){
 	if numLines>4{
 	diskLine:=strings.Split(block.Lines[4],":")[1]
 	diskLine=diskLine[0:len(diskLine)-1]
+	fmt.Printf("diskLine is %s\n",diskLine)
         diskDetails:=strings.Split(diskLine,",")
         runStatus.Disk_stats_ios=strings.Split(diskDetails[0],"=")[1]
         runStatus.Disk_stats_merge=strings.Split(diskDetails[1],"=")[1]
@@ -360,6 +364,9 @@ func BuildResult(blocks []Block,fioMode string) Result{
     }
     var runStatus RunStatus
     RemoveBlockSpaceAndEmptyLine(&blocks[len(blocks)-1])
+    fmt.Println("hello 1")
+    fmt.Println(blocks[len(blocks)-1].Lines)
+    fmt.Println("hello 2")
     GetRunStatus(blocks[len(blocks)-1],&runStatus,fioMode)
     var result Result
     result.Results=BlockValue
