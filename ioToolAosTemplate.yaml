@@ -1,0 +1,181 @@
+
+inputs:
+  cce-cluster-name: {default: perf-demo, description: Demo应用所在CCE集群名称, label: ''}
+  cce-subnetId: {description: 部署Demo应用的子网ID, label: ''}
+  cce-vpcId: {description: 部署Demo应用的虚拟私有云ID, label: ''}
+  cce-flavor: {default: c3.xlarge.2, description: 容器节点的规格, label: ''}
+  cce-node-num: {default: 1, description: 创建每个类型节点的数量，模板带有两个节点池，填写1即为一共创建了2个节点, label: '', type: integer}
+  EIP-Bandwidth: {default: 1, description: 带宽大小, label: ''}
+  cce-sshKeyName: {description: 创建节点登录时使用的密钥对，请妥善保存, label: ''}
+
+  sfsvol-name: {default: "perf-sfs", description: "sfs volume name for pics in web-console"}
+  sfsvol-size: {default: 1, description: "sfs volume size for pics in web-console"}
+  perf-agent-image: {default: 'swr.cn-south-1.myhuaweicloud.com/hwstaff_x00449208/fioservice:1.0.2',
+    label: ''}
+  image-pull-policy: {default: IfNotPresent}
+  monitoring-group: {default: perf-demo}
+  nodeport: {default: 31080, type: integer}
+  instance: {default: 1, type: integer}
+  availabilityZone: {default: cn-north-1a}
+
+node_templates:
+  perf-sfs:
+    type: HuaweiCloud.CCE.Storage.SFS
+    properties:
+      clusterId:
+        get_reference: cce-cluseter
+      deleteVolume: true
+      name: {get_input: sfsvol-name}
+      size: {get_input: sfsvol-size}
+    requirements:
+      - clusterId:
+          node: cce-cluseter
+      - dependency:
+          node: cce-nodepool-1
+
+  cce-cluseter:
+    properties:
+      flavor: cce.s1.small
+      kubeProxyMode: iptables
+      name:
+        get_input: cce-cluster-name
+      subnetId:
+        get_input: cce-subnetId
+      vpcId:
+        get_input: cce-vpcId
+    type: HuaweiCloud.CCE.Cluster
+  cce-nodepool-1:
+    properties:
+      clusterId:
+        get_reference: cce-cluseter
+      dataVolumes:
+        - size: 100
+          volumeType: SATA
+      flavor:
+        get_input: cce-flavor
+      instances:
+        get_input: cce-node-num
+      labels:
+        - key: node
+          value: pool1
+      name: ''
+      publicIp:
+        eip:
+          bandwidth:
+            shareType: PER
+            size:
+              get_input: EIP-Bandwidth
+          ipType: 5_sbgp
+      rootVolume:
+        size: 40
+        volumeType: SATA
+      sshKeyName:
+        get_input: cce-sshKeyName
+    requirements:
+      - clusterId:
+          node: cce-cluseter
+    type: HuaweiCloud.CCE.NodePool
+
+  perf-agent:
+    properties:
+      clusterId:
+        get_reference: cce-cluseter
+      k8sManifest:
+        apiVersion: apps/v1
+        kind: Deployment
+        metadata:
+          labels:
+            stack: {get_input: HuaweiCloud.StackName}
+            app: perf-agent
+          name: 
+            concat:
+              - perf-agent-
+              - get_input: HuaweiCloud.StackName
+        spec:
+          replicas: {get_input: instance}
+          selector:
+            matchLabels:
+              stack: {get_input: HuaweiCloud.StackName}
+              app: perf-agent
+          template:
+            metadata:
+              labels:
+                stack: {get_input: HuaweiCloud.StackName}
+                app: perf-agent
+            spec:
+              containers:
+                - env:
+                    - name: TEST_ENV
+                      value: perf-testdemo
+                  image: {get_input: perf-agent-image}
+                  imagePullPolicy: {get_input: image-pull-policy}
+                  name: perf-agent
+                  volumeMounts:
+                    - mountPath: /opt/perf-agent
+                      name: {get_input: sfsvol-name}
+                  resources:
+                    requests:
+                      cpu: 0.2
+                      memory: 300Mi
+                    limits:
+                      cpu: 1
+                      memory: 2000Mi
+              imagePullSecrets:
+                - name: default-secret
+              volumes:
+                - name: {get_input: sfsvol-name}
+                  persistentVolumeClaim:
+                    claimName: {get_input: sfsvol-name}
+    requirements:
+      - clusterId:
+          node: cce-cluseter
+      - dependency:
+          node: cce-nodepool-1
+          node: perf-sfs
+    type: HuaweiCloud.CCE.Deployment
+
+  perf-agent-service:
+    properties:
+      clusterId:
+        get_reference: cce-cluseter
+      k8sManifest:
+        apiVersion: v1
+        kind: Service
+        metadata:
+          name: 
+            concat:
+              - perf-agent-service
+              - get_input: HuaweiCloud.StackName
+          labels:
+            stack:
+              get_input: HuaweiCloud.StackName
+            app: 
+              get_attribute: 
+              - perf-agent
+              - refName
+        spec:
+          ports:
+            - nodePort: {get_input: nodeport}
+              port: 30008
+              targetPort: 8000
+          selector:
+            stack:
+              get_input: HuaweiCloud.StackName
+            app: perf-agent
+          type: NodePort
+    requirements:
+      - dependency:
+          node: perf-agent
+      - clusterId:
+          node: cce-cluseter
+    type: HuaweiCloud.CCE.Service
+    
+outputs:
+      
+policies:
+  perf-agent-policies:
+    properties:
+      name: {get_input: monitoring-group}
+    targets: [perf-agent]
+    type: HuaweiCloud.APM.Pinpoint
+tosca_definitions_version: huaweicloud_tosca_version_1_0
