@@ -1,0 +1,42 @@
+IO测试工具函数服务接口说明
+io-tool-deploy:
+创建集群，部署容器
+checkStack
+查询上一步堆栈部署的进度
+start_workflow
+启动工作流执行上述的工作
+check_workflow
+查询上一步的工作流进度，SUCCESS为工作流运行结束
+get_external_ip
+获取部署的应用的访问IP
+
+
+演示实例：
+启动工作流接口（GET/POST 方式都可以，无参数）
+https://b04d2b918e114d1dabcd0d0a78342b9a.apigw.cn-north-1.huaweicloud.com/start_workflow
+返回结果：
+{
+    "msg": "start workflow successfully.",
+    "code": 200,
+    "executionurn": "urn:fgs:cn-north-1:4f3f3dff856e4edabdf1fc1776fcf838:execution:workflow-fb60:analysis-execution1:83accc4a39bb4f3a5fd974500ab6f505"
+}
+****************************************************************************************************
+查询工作流状态接口（POST方式）
+https://b04d2b918e114d1dabcd0d0a78342b9a.apigw.cn-north-1.huaweicloud.com/check_workflow
+参数：
+{"executionurn": "urn:fgs:cn-north-1:4f3f3dff856e4edabdf1fc1776fcf838:execution:workflow-fb60:analysis-execution1:83accc4a39bb4f3a5fd974500ab6f505"}
+exectuionurn 为上一步的返回结果
+返回结果：
+{
+    "execution_state": "SUCCESS"
+}
+*****************************************************************************************
+获取部署的应用的访问IP接口（POST 方式，有参数）：
+参数：
+{"clusterName":"perf-demo2"} 
+https://b04d2b918e114d1dabcd0d0a78342b9a.apigw.cn-north-1.huaweicloud.com/get_external_ip
+返回结果：
+{
+    "externalIp": "114.115.205.142:31080",
+    "code": 200
+}
