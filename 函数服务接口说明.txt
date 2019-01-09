@@ -12,7 +12,26 @@ get_external_ip
 
 
 演示实例：
-启动工作流接口（GET/POST 方式都可以，无参数）
+启动工作流接口（POST 方式）
+参数：
+{
+   "template_id":"06d3b1d7-8428-e3c3-6eb4-93fb32569c6c", //AOS模板ID，模板已在仓库中，上传到AOS后可见ID
+   "name":"test",
+   "cce-cluster-name":"perf-demo2",
+   "cce-subnetId":"ed2e4ac9-887c-49b1-978a-3ca829d1dee9",
+   "cce-vpcId":"3137ba8c-dcf3-41be-916c-a4f64ba3f99e",
+   "cce-flavor":"c3.xlarge.2",
+   "cce-node-num":1,
+   "EIP-Bandwidth":1,
+   "sfsvol-name":"perf-sfs",
+   "sfsvol-size":1,
+   "perf-agent-image":"swr.cn-north-1.myhuaweicloud.com/hwstaff_x00449208/io_tool:1.0.1",//镜像地址，打镜像的一切文件都已在仓库中
+   "image-pull-policy":"IfNotPresent",
+   "monitoring-group":"perf-demo",
+   "nodeport":31080,
+   "instance":1,
+   "availabilityZone":"cn-north-1"
+ }
 https://b04d2b918e114d1dabcd0d0a78342b9a.apigw.cn-north-1.huaweicloud.com/start_workflow
 返回结果：
 {
