@@ -1,0 +1,55 @@
+{
+	"states": {
+		"RunTask": {
+			"type": "OPERATION",
+			"start": true,
+			"action-mode": "SEQUENTIAL",
+			"actions": [
+				{
+					"action-name": "start-deploy",
+					"function": "urn:fss:cn-north-1:4f3f3dff856e4edabdf1fc1776fcf838:function:default:io-tool-deploy:latest",
+					"invocation-mode": "SYNC",
+					"timeout": 0
+				}
+			],
+			"next-state": "CheckState"
+		},
+		"CheckState": {
+			"type": "OPERATION",
+			"action-mode": "SEQUENTIAL",
+			"actions": [
+				{
+					"action-name": "check-stack-Status",
+					"function": "urn:fss:cn-north-1:4f3f3dff856e4edabdf1fc1776fcf838:function:default:checkStack",
+					"invocation-mode": "SYNC",
+					"timeout": 300
+				}
+			],
+			"next-state": "isTaskFinished"
+		},
+		"isTaskFinished": {
+			"type": "SWITCH",
+			"choices": [
+				{
+					"path": "$.result",
+					"value": "1",
+					"next-state": "end"
+				},
+				{
+					"path": "$.result",
+					"value": "0",
+					"next-state": "WaitState2s"
+				}
+			],
+			"default": "WaitState2s"
+		},
+		"WaitState2s": {
+			"type": "DELAY",
+			"time-delay": 50,
+			"next-state": "CheckState"
+		},
+		"end": {
+			"type": "END"
+		}
+	}
+}
