@@ -1,4 +1,4 @@
-IO测试工具函数服务接口说明
+﻿IO测试工具函数服务接口说明
 io-tool-deploy:
 创建集群，部署容器
 checkStack
@@ -28,7 +28,7 @@ get_external_ip
    "perf-agent-image":"swr.cn-north-1.myhuaweicloud.com/hwstaff_x00449208/io_tool:1.0.1",//镜像地址，打镜像的一切文件都已在仓库中
    "image-pull-policy":"IfNotPresent",
    "monitoring-group":"perf-demo",
-   "nodeport":31080,
+   "nodeport":31080, //这个端口号不要改，保持31080，如果要改，访问地址的端口号也要修改。
    "instance":1,
    "availabilityZone":"cn-north-1"
  }
